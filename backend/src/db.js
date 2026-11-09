@@ -5,11 +5,12 @@ import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 
-const DB_PATH = process.env.DB_FILE || '/data/wellsense.db';
+const DEFAULT_DB_PATH = process.env.VERCEL ? '/tmp/wellsense.db' : '/data/wellsense.db';
+const DB_PATH = process.env.DB_FILE || DEFAULT_DB_PATH;
 let db = null;
 
 export async function initDb(customPath = null) {
-  const filePath = customPath || DB_PATH;
+  let filePath = customPath || DB_PATH;
 
   // Ensure directory exists if not an in-memory database
   if (filePath !== ':memory:') {

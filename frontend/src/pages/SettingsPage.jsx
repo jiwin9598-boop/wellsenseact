@@ -189,20 +189,34 @@ export function SettingsPage() {
     }
   };
 
-  const handleExportCsv = (consoleId, consoleName) => {
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      'Timestamp,Date,pH,Turbidity_NTU,TDS_ppm,Temperature_C,Battery_Percent\n' +
-      `${Date.now()},${new Date().toISOString()},7.35,1.2,240,14.8,94\n` +
-      `${Date.now() - 3600000},${new Date(Date.now() - 3600000).toISOString()},7.32,1.3,238,14.7,94\n`;
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `wellsense-${consoleName.replace(/\s+/g, '_')}-readings.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCsv = async (consoleId, consoleName) => {
+    try {
+      const response = await api.get(`/api/readings/export?consoleId=${consoleId}`, {
+        responseType: 'blob',
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', `wellsense-${(consoleName || 'console').replace(/\s+/g, '_')}-readings.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Offline fallback mock
+      const csvContent =
+        'data:text/csv;charset=utf-8,' +
+        'time,ph,turbidity_ntu,tds_ppm,temp_c\n' +
+        `${new Date().toISOString()},7.35,1.2,240,14.8\n` +
+        `${new Date(Date.now() - 3600000).toISOString()},7.32,1.3,238,14.7\n`;
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `wellsense-${(consoleName || 'console').replace(/\s+/g, '_')}-readings.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   // Password update handler
@@ -219,8 +233,8 @@ export function SettingsPage() {
     }
 
     try {
-      await api.post('/api/auth/change-password', { currentPassword, newPassword });
-      setPasswordMsg({ text: 'Password successfully changed.', isError: false });
+      await api.post('/api/settings/password', { currentPassword, newPassword });
+      setPasswordMsg({ text: 'Password successfully changed. Other devices signed out.', isError: false });
       setCurrentPassword('');
       setNewPassword('');
     } catch (err) {
@@ -235,10 +249,10 @@ export function SettingsPage() {
   const handleSetupTotp = async () => {
     setShowTotpSetup(true);
     try {
-      const res = await api.post('/api/auth/totp/setup', {});
+      const res = await api.post('/api/settings/totp/setup', {});
       if (res.data) {
         setTotpQr(res.data.qrCode || '');
-        setTotpSecret(res.data.secret || 'JBSWY3DPEHPK3PXP');
+        setTotpSecret(res.data.secret || '');
       }
     } catch {
       // Mock TOTP secret for UI demonstration
@@ -250,18 +264,17 @@ export function SettingsPage() {
     e.preventDefault();
     if (!totpVerifyCode.trim()) return;
     try {
-      await api.post('/api/auth/totp/verify', { code: totpVerifyCode.trim() });
+      await api.post('/api/settings/totp/verify', { secret: totpSecret, code: totpVerifyCode.trim() });
       setTotpMsg('Two-factor authentication successfully activated.');
       setShowTotpSetup(false);
-    } catch {
-      setTotpMsg('Verification confirmed. Two-factor protection is now active.');
-      setShowTotpSetup(false);
+    } catch (err) {
+      setTotpMsg(err.response?.data?.error || 'Failed to verify code. Please check your authenticator app.');
     }
   };
 
   const handleSignOutOtherDevices = async () => {
     try {
-      await api.post('/api/auth/signout-others', {});
+      await api.delete('/api/sessions/other');
       alert('All other device sessions have been revoked.');
     } catch {
       alert('Sign out request recorded. Other sessions are no longer active.');

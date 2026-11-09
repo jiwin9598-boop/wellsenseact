@@ -16,8 +16,9 @@ let vapidPrivateKey = null;
  * Initialize Web Push with VAPID keys loaded from disk or freshly generated.
  */
 export async function initWebPush() {
-  const privPath = process.env.VAPID_PRIVATE_KEY_FILE || '/data/vapid_private.key';
-  const pubPath = process.env.VAPID_PUBLIC_KEY_FILE || '/data/vapid_public.key';
+  const defaultDir = process.env.VERCEL ? '/tmp' : '/data';
+  const privPath = process.env.VAPID_PRIVATE_KEY_FILE || path.join(defaultDir, 'vapid_private.key');
+  const pubPath = process.env.VAPID_PUBLIC_KEY_FILE || path.join(defaultDir, 'vapid_public.key');
 
   try {
     if (fs.existsSync(privPath) && fs.existsSync(pubPath)) {

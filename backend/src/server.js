@@ -46,6 +46,30 @@ const isMainModule = process.argv[1] && (
   process.argv[1].endsWith('server')
 );
 
+let initPromise = null;
+async function ensureInitialized() {
+  if (!initPromise) {
+    initPromise = (async () => {
+      await initDb();
+      await initWebPush();
+    })();
+  }
+  return initPromise;
+}
+
+export default async function handler(req, res) {
+  try {
+    await ensureInitialized();
+    await router(req, res);
+  } catch (err) {
+    console.error('Unhandled server error:', err);
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Internal Server Error' }));
+    }
+  }
+}
+
 if (isMainModule && process.env.NODE_ENV !== 'test') {
   start();
 }
