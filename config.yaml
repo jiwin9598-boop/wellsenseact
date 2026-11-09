@@ -1,0 +1,57 @@
+# CalfWatch AI - Central Configuration File
+# All thresholds, model paths, and tunables live here.
+
+system:
+  time_scale: 60.0               # 1 real second = 60 simulated seconds (1 simulated minute)
+  output_dir: "output"
+  demo_events_path: "data/demo_events.json"
+  state_filename: "state.json"
+  run_log_filename: "run_log.csv"
+  annotated_video_filename: "annotated_output.mp4"
+
+detection:
+  model_path: "yolov8n.pt"
+  conf: 0.35
+  device: "cpu"
+  imgsz: 480                    # Inference resolution (320 = 4x faster on CPU, 480 = balanced, 640 = max detail)
+  frame_skip: 4                 # Process 1 in every N frames (4 = 4x faster on video)
+  cow_class_id: 19              # COCO class 19 = 'cow'
+  calf_size_ratio_threshold: 0.65 # Relative box area to differentiate calf vs adult cow
+
+behaviour:
+  lying_aspect_min: 1.6          # aspect = width / height. aspect > 1.6 indicates lying
+  standing_aspect_max: 1.3       # aspect < 1.3 indicates standing
+  lying_center_y_min: 0.40       # normalized Y centre in lower region indicates lying
+  suckling_iou_threshold: 0.05   # min IoU overlap with cow box for suckling
+  suckling_center_dist_max: 220  # max pixel distance between calf and cow centres
+  suckling_head_in_lower_cow: true
+  debounce_frames: 15            # consecutive frames to confirm behaviour transition
+
+risk:
+  stand_thresholds:
+    fast_max_min: 30.0           # < 30 min -> 0 pts
+    fast_points: 0
+    delayed_max_min: 60.0        # 30-60 min -> 30 pts
+    delayed_points: 30
+    late_points: 55              # > 60 min -> 55 pts
+
+  suckle_thresholds:
+    fast_max_min: 120.0          # < 120 min -> 0 pts
+    fast_points: 0
+    delayed_max_min: 240.0       # 120-240 min -> 25 pts
+    delayed_points: 25
+    late_points: 45              # > 240 min -> 45 pts
+
+  auto_high:
+    stand_max_min: 60.0          # Never stood by 60 min = automatic HIGH
+    suckle_max_min: 240.0        # Never suckled by 240 min = automatic HIGH
+
+  score_levels:
+    low_max: 29                  # 0-29: LOW
+    medium_max: 59               # 30-59: MEDIUM
+    # 60-100: HIGH
+
+  actions:
+    low: "Calf is healthy and exhibiting normal milestone timing. Continue routine observation."
+    medium: "Monitor closely — calf is slow to reach milestones. Prepare assistance if no progression."
+    high: "Check calf immediately — assist standing and tube-feed colostrum if needed."

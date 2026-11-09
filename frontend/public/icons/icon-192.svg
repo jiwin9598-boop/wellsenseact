@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="36" fill="#0c1a22"/>
+  <circle cx="96" cy="96" r="82" fill="#0b7a75"/>
+  <!-- Water Droplet -->
+  <path d="M 96,44 C 96,44 136,92 136,118 A 40,40 0 0,1 56,118 C 56,92 96,44 96,44 Z" fill="#ffffff"/>
+  <!-- Subtle Water Highlight -->
+  <path d="M 86,96 C 82,106 82,118 88,128" fill="none" stroke="#0b7a75" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "wellsense-backend",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test_backend.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7",
+    "sqlite": "^5.1.1",
+    "web-push": "^3.6.5",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "supertest": "^6.3.3"
+  }
+}
