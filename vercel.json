@@ -13,7 +13,7 @@
     },
     "backend": {
       "root": "backend",
-      "entrypoint": "TwinPage.jsx"
+      "entrypoint": "src/server.js"
     }
   },
   "rewrites": [
