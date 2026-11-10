@@ -60,35 +60,48 @@ export async function handleGetReadings(req, res) {
   const consoleId = Number(consoleIdParam);
   const range = url.searchParams.get('range') || '24h';
 
-  if (!consoleIdParam || isNaN(consoleId)) {
+  if (consoleIdParam && (!Number.isInteger(consoleId) || consoleId <= 0)) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'Valid consoleId is required' }));
   }
 
   const db = getDb();
-  const consoleRow = await db.get(
-    'SELECT id FROM consoles WHERE id = ? AND user_id = ?',
-    consoleId,
-    session.userId
-  );
+  if (consoleIdParam) {
+    const consoleRow = await db.get(
+      'SELECT id FROM consoles WHERE id = ? AND user_id = ?',
+      consoleId,
+      session.userId
+    );
 
-  if (!consoleRow) {
-    res.writeHead(403, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Forbidden' }));
+    if (!consoleRow) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Forbidden' }));
+    }
   }
 
   const now = Date.now();
   const start = now - rangeToMs(range);
 
-  const rows = await db.all(
-    `SELECT id, console_id, ph, turbidity, tds, temperature, battery, ts, created_at
-     FROM readings
-     WHERE console_id = ? AND ts BETWEEN ? AND ?
-     ORDER BY ts ASC`,
-    consoleId,
-    start,
-    now
-  );
+  const rows = consoleIdParam
+    ? await db.all(
+      `SELECT id, console_id, ph, turbidity, tds, temperature, battery, ts, created_at
+       FROM readings
+       WHERE console_id = ? AND ts BETWEEN ? AND ?
+       ORDER BY ts ASC`,
+      consoleId,
+      start,
+      now
+    )
+    : await db.all(
+      `SELECT id, console_id, ph, turbidity, tds, temperature, battery, ts, created_at
+       FROM readings
+       WHERE ts BETWEEN ? AND ?
+         AND console_id IN (SELECT id FROM consoles WHERE user_id = ?)
+       ORDER BY ts ASC`,
+      start,
+      now,
+      session.userId
+    );
 
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(rows));

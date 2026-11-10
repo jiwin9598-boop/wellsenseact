@@ -297,6 +297,14 @@ async function runTests() {
   if (readingsList.length === 0) throw new Error('Expected readings in range');
   console.log(`✓ GET /api/readings returned ${readingsList.length} reading(s)`);
 
+  const allReadingsRes = await makeRequest('GET', '/api/readings?range=24h', { Cookie: sessionCookie });
+  if (allReadingsRes.statusCode !== 200) throw new Error(`Get all readings failed: ${allReadingsRes.statusCode} ${allReadingsRes.body}`);
+  const allReadingsList = JSON.parse(allReadingsRes.body);
+  if (!allReadingsList.some((reading) => reading.console_id === consoleData.id)) {
+    throw new Error('Range-only readings should include data from the authenticated user’s consoles');
+  }
+  console.log(`✓ GET /api/readings without consoleId returned ${allReadingsList.length} user reading(s)`);
+
   // GET /api/readings/export (CSV)
   const csvRes = await makeRequest('GET', `/api/readings/export?consoleId=${consoleData.id}`, { Cookie: sessionCookie });
   if (csvRes.statusCode !== 200) throw new Error(`CSV export failed: ${csvRes.statusCode}`);
