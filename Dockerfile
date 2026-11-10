@@ -18,6 +18,5 @@ ENV PORT=3000
 ENV DB_FILE=/data/wellsense.db
 EXPOSE 3000
 
-VOLUME /data
 
 CMD ["node", "src/server.js"]
