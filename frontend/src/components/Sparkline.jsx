@@ -1,5 +1,16 @@
 import React, { useRef, useEffect } from 'react';
 
+function colorWithOpacity(color, opacity) {
+  const match = color.match(/^#([\da-f]{3}|[\da-f]{6})$/i);
+  if (!match) return color;
+
+  const hex = match[1].length === 3
+    ? [...match[1]].map((digit) => digit + digit).join('')
+    : match[1];
+  const channels = [0, 2, 4].map((index) => parseInt(hex.slice(index, index + 2), 16));
+  return `rgba(${channels.join(', ')}, ${opacity})`;
+}
+
 /**
  * High-performance canvas-based sparkline.
  * Props:
@@ -22,6 +33,13 @@ export function Sparkline({
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const cssVariable = color.match(/^var\((--[^)]+)\)$/);
+    const resolvedColor = cssVariable
+      ? getComputedStyle(canvas).getPropertyValue(cssVariable[1]).trim()
+      : color;
+    ctx.fillStyle = resolvedColor;
+    const canvasColor = ctx.fillStyle;
 
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
@@ -60,8 +78,8 @@ export function Sparkline({
 
     // Fill gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, `${color}44`); // 26% opacity
-    gradient.addColorStop(1, `${color}00`); // 0% opacity
+    gradient.addColorStop(0, colorWithOpacity(canvasColor, 0.26));
+    gradient.addColorStop(1, colorWithOpacity(canvasColor, 0));
 
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
@@ -80,7 +98,7 @@ export function Sparkline({
     for (let i = 1; i < points.length; i++) {
       ctx.lineTo(points[i].x, points[i].y);
     }
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = canvasColor;
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -90,7 +108,7 @@ export function Sparkline({
     const lastPoint = points[points.length - 1];
     ctx.beginPath();
     ctx.arc(lastPoint.x, lastPoint.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = color;
+    ctx.fillStyle = canvasColor;
     ctx.fill();
   }, [data, color, width, height]);
 
