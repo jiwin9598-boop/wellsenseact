@@ -13,7 +13,7 @@
     },
     "backend": {
       "root": "backend",
-      "entrypoint": "src/server.js"
+      "entrypoint": "main.py"
     }
   },
   "rewrites": [
