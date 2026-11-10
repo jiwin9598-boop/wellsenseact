@@ -1,0 +1,7 @@
+{
+  "name": "wellsenseact",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ]
+}
